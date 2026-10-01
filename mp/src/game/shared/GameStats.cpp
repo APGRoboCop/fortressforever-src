@@ -191,7 +191,7 @@ void CBaseGameStats::StatsLog( char const *fmt, ... )
 	char timeString[ 128 ];
 	Q_strncpy( timeString, asctime( newtime ), sizeof( timeString ) );
 	// Get rid of the \n.
-	char *pEnd = strstr( timeString, "\n" );
+	char *pEnd = strchr( timeString, '\n' );
 	if ( pEnd )
 	{
 		*pEnd = 0;
