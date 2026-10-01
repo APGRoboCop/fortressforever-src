@@ -83,9 +83,12 @@ void CFFTimerOptions::Load()
 	int iCurrent = 0;
 	m_pTimers->DeleteAllItems();
 
+	const char *pszTimerWav = cl_timerwav.GetString();
+	int nTimerWavLength = Q_strlen(pszTimerWav);
+
 	FileFindHandle_t findHandle;
 	const char *pFilename = (*pFilesystem)->FindFirstEx("sound/timers/*.wav", "MOD", &findHandle);
-	
+
 	while (pFilename != NULL) 
 	{
 		KeyValues *kv = new KeyValues("timers");
@@ -93,10 +96,8 @@ void CFFTimerOptions::Load()
 		int iNew= m_pTimers->AddItem(pFilename, kv);
 		kv->deleteThis();
 
-		int nLength = strlen(cl_timerwav.GetString());
-
 		// This is our timer file
-		if (Q_strncmp(pFilename, cl_timerwav.GetString(), nLength) == 0)
+		if (Q_strncmp(pFilename, pszTimerWav, nTimerWavLength) == 0)
 		{
 			iCurrent = iNew;
 		}
@@ -112,9 +113,12 @@ void CFFTimerOptions::Load()
 	int iCurrent2 = 0;
 	m_pBeeps->DeleteAllItems();
 
+	const char *pszKillBeepWav = cl_killbeepwav.GetString();
+	int nKillBeepWavLength = Q_strlen(pszKillBeepWav);
+
 	FileFindHandle_t findHandle2;
 	const char *pFilename2 = (*pFilesystem)->FindFirstEx("sound/player/deathbeep/*.wav", "MOD", &findHandle2);
-	
+
 	while (pFilename2 != NULL) 
 	{
 		KeyValues *kv = new KeyValues("Beeps");
@@ -122,10 +126,8 @@ void CFFTimerOptions::Load()
 		int iNew= m_pBeeps->AddItem(pFilename2, kv);
 		kv->deleteThis();
 
-		int nLength = strlen(cl_killbeepwav.GetString());
-
 		// This is our timer file
-		if (Q_strncmp(pFilename2, cl_killbeepwav.GetString(), nLength) == 0)
+		if (Q_strncmp(pFilename2, pszKillBeepWav, nKillBeepWavLength) == 0)
 		{
 			iCurrent2 = iNew;
 		}
