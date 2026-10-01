@@ -5998,14 +5998,24 @@ bool UTIL_CreateScaledPhysObject( CBaseAnimating *pInstance, float flScale )
 		const int nNumConvex = pQuery->ConvexCount();
 		CPhysConvex **pConvexes = (CPhysConvex **) stackalloc( sizeof(CPhysConvex *) * nNumConvex );
 
+		// Vert scratch buffers, reused for each convex - replacement for the old stackalloc()
+		// method that was used to create a single buffer for all verts,
+		// which was too small for some models - [APG]RoboCop[CL]
+		CUtlVector<Vector> verts;
+		CUtlVector<Vector *> vertPtrs;
+
 		// For each convex, collect the verts and create a convex from it we'll retain for later
 		for ( int i = 0; i < nNumConvex; i++ )
 		{
 			int nNumTris = pQuery->TriangleCount( i );
 			int nNumVerts = nNumTris * 3;
-			// FIXME: Really?  stackalloc?
-			Vector *pVerts = (Vector *) stackalloc( sizeof(Vector) * nNumVerts );
-			Vector **ppVerts = (Vector **) stackalloc( sizeof(Vector *) * nNumVerts );
+
+			verts.SetCount( nNumVerts );
+			vertPtrs.SetCount( nNumVerts );
+
+			Vector *pVerts = verts.Base();
+			Vector **ppVerts = vertPtrs.Base();
+
 			for ( int j = 0; j < nNumTris; j++ )
 			{
 				// Get all the verts for this triangle and scale them up
@@ -6024,7 +6034,16 @@ bool UTIL_CreateScaledPhysObject( CBaseAnimating *pInstance, float flScale )
 			pConvexes[i] = physcollision->ConvexFromVerts( ppVerts, nNumVerts );
 			Assert( pConvexes[i] != NULL );
 			if ( pConvexes[i] == NULL )
+			{
+				// Free the convexes built so far, they haven't been converted to a collide yet
+				for ( int k = 0; k < i; k++ )
+				{
+					physcollision->ConvexFree( pConvexes[k] );
+				}
+
+				physcollision->DestroyQueryModel( pQuery );
 				return false;
+			}
 		}
 
 		// Clean up
@@ -6039,7 +6058,15 @@ bool UTIL_CreateScaledPhysObject( CBaseAnimating *pInstance, float flScale )
 	// Get our solid info
 	solid_t tmpSolid;
 	if ( !PhysModelParseSolidByIndex( tmpSolid, pInstance, pInstance->GetModelIndex(), -1 ) )
+	{
+		// Only free the collide if we made a scaled copy, the original belongs to the model
+		if ( pNewCollide != pCollide->solids[0] )
+		{
+			physcollision->DestroyCollide( pNewCollide );
+		}
+
 		return false;
+	}
 
 	// Physprops get keyvalues that effect the mass, this block is to respect those fields when we scale
 	CPhysicsProp *pPhysInstance = dynamic_cast<CPhysicsProp*>( pInstance );
